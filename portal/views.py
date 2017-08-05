@@ -8,6 +8,7 @@
 """
 
 from uuid import uuid4
+from functools import wraps
 
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.http import HttpResponse
@@ -50,7 +51,7 @@ def get_session(request):
         sessionid = request.session.get('sessionid')
         userid = request.session.get('userid')
         if (not sessionid) or (not userid):
-            return False
+            return None
         return UserSession.objects.get(pk=sessionid)
     except UserSession.DoesNotExist:
         return None
@@ -60,8 +61,9 @@ def register_new_session(userid):
     if not userid:
         return None
     try:
-        session = UserSession(sessionid=uuid4().hex,
-                              user=User.objects.get(roll_no=userid))
+        userobj = User.objects.get(roll_no=userid)
+        print(userobj)
+        session = UserSession(sessionid=uuid4().hex, user=userobj)
         session.save()
         return session
     except User.DoesNotExist:
@@ -69,18 +71,31 @@ def register_new_session(userid):
         return None
 
 
+def authenticate(request):
+    if request.method == 'POST':
+        userid = request.POST.get('username')
+        password = request.POST.get('password')
+        print(userid, password)
+        # some random validation
+        session = register_new_session(userid)
+        if session:
+            request.session['userid'] = session.user.roll_no
+            request.session['sessionid'] = session.sessionid
+            return HttpResponse('authenticated')
+        else:
+            return HttpResponse('Invalid user')
+    else:
+        return HttpResponse('Method not allowed.')
+
+
 def login(request):
     session = get_session(request)
-    if session is not None:
-        if request.method == 'POST':
-            userid = request.POST.get('username')
-            session = register_new_session(userid)
-        if session is None:
-                return redirect('/')
-        else:
-            return render(request, 'login.html', {'form': LoginForm})
+    if session is None:
+        return render(request, 'login.html',
+                      {'form': LoginForm, 'submit_url': reverse(authenticate)})
     else:
-        return render(request, 'login.html', {'form': LoginForm})
+        return redirect(reverse(GetInfo.basic, args=[request.session.get('userid')]))
+
 
 
 def logout(request):
@@ -90,6 +105,26 @@ def logout(request):
         request.session.pop('userid')
         session.delete()
     return HttpResponse('logout done')
+
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_fn(request, *args, **kwargs):
+        session = get_session(request)
+        if session is None:
+            return redirect(reverse(login))
+        return f(request, *args, **kwargs)
+    return decorated_fn
+
+
+def authorized(f):
+    @wraps(f)
+    def decorated_fn(request, roll_no, *args, **kwargs):
+        if request.session.get('userid') == roll_no:
+            return f(request, roll_no, *args, **kwargs)
+        return HttpResponse('Unauthorized')
+    return decorated_fn
 
 
 class GetInfo(object):
@@ -125,6 +160,8 @@ class GetInfo(object):
 class PostInfo(object):
 
     @staticmethod
+    @login_required
+    @authorized
     def basic(request, roll_no):
         context = {
             'roll_no': roll_no,
@@ -145,6 +182,8 @@ class PostInfo(object):
             return render(request, 'user_edit.html', context)
 
     @staticmethod
+    @login_required
+    @authorized
     def social(request, roll_no):
         context = {
             'roll_no': roll_no,
@@ -165,6 +204,8 @@ class PostInfo(object):
             return render(request, 'user_edit.html', context)
 
     @staticmethod
+    @login_required
+    @authorized
     def misc(request, roll_no):
         context = {
             'roll_no': roll_no,
