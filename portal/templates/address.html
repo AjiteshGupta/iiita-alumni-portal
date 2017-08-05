@@ -1,0 +1,10 @@
+<h2>Temporary Address </h2>
+{%if message%}
+<h2>{{message}}</h2>
+{% endif %}
+
+<form action="" method="POST" role="form">
+	{% csrf_token %}
+	{{ form.as_p }}
+	<button type="submit">Submit</button>
+</form>	

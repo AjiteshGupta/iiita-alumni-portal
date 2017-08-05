@@ -224,3 +224,62 @@ class PostInfo(object):
         else:
             context['form'] = User_MiscInfoForm(initial=model_to_dict(user))
             return render(request, 'user_edit.html', context)
+
+
+    @staticmethod
+    @login_required
+    @authorized
+    def permanent_address(request, roll_no):
+        context = {
+            'roll_no': roll_no,
+            'form': None,
+            'submit_url': reverse(PostInfo.permanent_address, args=[roll_no])
+        }
+        user = get_object_or_404(User, roll_no=roll_no)
+        if request.method == 'POST':
+            if user.permanent_address is None:
+                user.permanent_address = Address.objects.create()
+                user.permanent_address.save()
+                user.save()
+            form = AddressForm(request.POST, instance=user.permanent_address)
+            if form.is_valid():
+                form.save()
+                return redirect(GetInfo.misc, roll_no=roll_no)
+            else:
+                context['form'] = form
+                return render(request, 'address.html', context)
+        else:
+            if user.permanent_address is None:
+                context['form'] = AddressForm()
+            else:
+                context['form'] = AddressForm(initial=model_to_dict(user.permanent_address))
+            return render(request, 'address.html', context)
+
+    @staticmethod
+    @login_required
+    @authorized
+    def current_address(request, roll_no):
+        context = {
+            'roll_no': roll_no,
+            'form': None,
+            'submit_url': reverse(PostInfo.current_address, args=[roll_no])
+        }
+        user = get_object_or_404(User, roll_no=roll_no)
+        if request.method == 'POST':
+            if user.permanent_address is None:
+                user.current_address = Address.objects.create()
+                user.current_address.save()
+                user.save()
+            form = AddressForm(request.POST, instance=user.current_address)
+            if form.is_valid():
+                form.save()
+                return redirect(GetInfo.misc, roll_no=roll_no)
+            else:
+                context['form'] = form
+                return render(request, 'address.html', context)
+        else:
+            if user.current_address is None:
+                context['form'] = AddressForm()
+            else:
+                context['form'] = AddressForm(initial=model_to_dict(user.current_address))
+            return render(request, 'address.html', context)

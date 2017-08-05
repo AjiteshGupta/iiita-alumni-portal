@@ -23,6 +23,8 @@ urlpatterns = [
     url(r'^(?P<roll_no>\w+)/basic/edit', views.PostInfo.basic, name='edit-user-basic'),
     url(r'^(?P<roll_no>\w+)/social/edit', views.PostInfo.social, name='edit-user-social'),
     url(r'^(?P<roll_no>\w+)/misc/edit', views.PostInfo.misc, name='edit-user-misc'),
+    url(r'^(?P<roll_no>\w+)/permanent_address/edit', views.PostInfo.permanent_address, name='edit-permanent-address'),
+    url(r'^(?P<roll_no>\w+)/current_address/edit', views.PostInfo.current_address, name='edit-current-address'),
     # url(r'(?P<roll_no>\w+)/address/current/edit', views.edit_current_address),
     # url(r'(?P<roll_no>\w+)/address/permanent/edit', views.edit_permanent_address),
     # url(r'(?P<roll_no>\w+)/qualification/(?P<qual_id>\w+)/edit', views.edit_qualification),
