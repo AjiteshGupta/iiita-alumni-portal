@@ -18,8 +18,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
 
 from .forms import User_BasicInfoForm, User_MiscInfoForm, User_SocialLinksForm
-from .forms import AddressForm, QualificationForm, WorkExperienceForm
-from .models import User, Address, Qualification, WorkExperience
+from .forms import AddressForm, QualificationForm, WorkExperienceForm, LoginForm
+from .models import User, Address, Qualification, WorkExperience, UserSession
 
 # Create your views here.
 def index(request):
@@ -40,10 +40,6 @@ def handler404(request):
 
 def handler500(request):
     render(request, '500.html', status=500)
-
-
-from .forms import LoginForm
-from .models import UserSession
 
 
 def get_session(request):
@@ -71,12 +67,21 @@ def register_new_session(userid):
         return None
 
 
+def ldap_validate(userid, password):
+    return True
+
+
 def authenticate(request):
     if request.method == 'POST':
         userid = request.POST.get('username')
         password = request.POST.get('password')
         print(userid, password)
+
         # some random validation
+
+        if not ldap_validate(userid, password):
+            pass
+
         session = register_new_session(userid)
         if session:
             request.session['userid'] = session.user.roll_no
